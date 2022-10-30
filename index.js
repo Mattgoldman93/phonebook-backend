@@ -1,6 +1,22 @@
 const express = require('express');
+const morgan = require('morgan');
+var favicon = require('serve-favicon');
+var path = require('path');
+const cors = require('cors');
 
-const app = express().use(express.json());
+morgan.token('body', (req, res) => JSON.stringify(req.body));
+
+const app = express();
+app.use(cors());
+app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+
+app.use(morgan('tiny'));
+app.use(
+  morgan(':body', {
+    skip: (req, res) => req.method != 'POST',
+  }),
+);
+app.use(express.json());
 
 let persons = [
   {
@@ -84,7 +100,12 @@ app.post('/api/persons', (request, response) => {
   response.json(person);
 });
 
-const PORT = 3001;
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' });
+};
+app.use(unknownEndpoint);
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
